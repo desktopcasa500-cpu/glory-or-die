@@ -29,6 +29,13 @@ extends Resource
 @export var ammo_cookoff_threshold: float = 72.0
 @export var turret_ring_lock_threshold: float = 80.0
 @export var crew_knockout_threshold: float = 55.0
+@export var role: String = "MEDIUM"
+@export var doctrine: String = "BALANCED"
+@export var passive_name: String = "Steady"
+@export var passive_value: float = 1.0
+@export var ability_name: String = "Focus"
+@export var ability_duration: float = 8.0
+@export var ability_cooldown: float = 30.0
 @export var description: String = ""
 
 static func build(name_value: String, mass: float, hp: float, speed: float, reverse: float, front: float, side: float, rear: float, caliber: float, reload: float, velocity: float, penetration: float, traverse: float, aim: float, acceleration: float, efficiency: float, projectile_mass: float, projectile_diameter: float, drag: float, turn_rate: float, bot_range: float, hull: float, description_text: String) -> TankData:
@@ -55,7 +62,7 @@ static func build(name_value: String, mass: float, hp: float, speed: float, reve
     data.hull_turn_deg_sec = turn_rate
     data.bot_fire_range = bot_range
     data.hull_health = hull
+    data.description = description_text
     data.impact_damage_factor = 34.0
     data.max_hull_damage = 68.0
-    data.description = description_text
     return data
