@@ -1,25 +1,44 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=12 format=3]
 
-[ext_resource path="res://scripts/TankBase.gd" type="Script" id="1"]
-[ext_resource path="res://scripts/components/EngineComponent.gd" type="Script" id="2"]
-[ext_resource path="res://scripts/components/AmmoRackComponent.gd" type="Script" id="3"]
-[ext_resource path="res://scripts/components/TurretRingComponent.gd" type="Script" id="4"]
-[ext_resource path="res://scripts/components/CrewComponent.gd" type="Script" id="5"]
+[ext_resource path="res://scripts/TankBase.gd" type="Script" id="1_tank"]
+[ext_resource path="res://scripts/components/EngineComponent.gd" type="Script" id="2_engine"]
+[ext_resource path="res://scripts/components/AmmoRackComponent.gd" type="Script" id="3_ammo"]
+[ext_resource path="res://scripts/components/TurretRingComponent.gd" type="Script" id="4_ring"]
+[ext_resource path="res://scripts/components/CrewComponent.gd" type="Script" id="5_crew"]
 
 [sub_resource type="BoxShape3D" id="HullShape"]
-size = Vector3(3.0, 1.2, 5.0)
+size = Vector3(3.2, 1.4, 5.2)
 
 [sub_resource type="BoxMesh" id="HullMesh"]
-size = Vector3(3.0, 1.2, 5.0)
+size = Vector3(3.2, 1.4, 5.2)
 
 [sub_resource type="CylinderMesh" id="TurretMeshData"]
-top_radius = 1.15
-bottom_radius = 1.15
-height = 0.65
+top_radius = 1.2
+bottom_radius = 1.28
+height = 0.72
 radial_segments = 16
 
+[sub_resource type="BoxMesh" id="GunMantletMesh"]
+size = Vector3(1.55, 0.5, 0.55)
+
+[sub_resource type="CylinderMesh" id="BarrelMesh"]
+top_radius = 0.10
+bottom_radius = 0.13
+height = 3.5
+radial_segments = 10
+
+[sub_resource type="StandardMaterial3D" id="HullMat"]
+albedo_color = Color(0.22, 0.27, 0.21, 1)
+roughness = 0.94
+
+[sub_resource type="StandardMaterial3D" id="TurretMat"]
+albedo_color = Color(0.24, 0.29, 0.23, 1)
+roughness = 0.92
+
 [node name="TankBase" type="CharacterBody3D"]
-script = ExtResource("1")
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("1_tank")
 
 [node name="HullCollision" type="CollisionShape3D" parent="."]
 shape = SubResource("HullShape")
@@ -27,30 +46,43 @@ position = Vector3(0, 0.7, 0)
 
 [node name="HullMesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("HullMesh")
+material_override = SubResource("HullMat")
 position = Vector3(0, 0.7, 0)
 
 [node name="Turret" type="Node3D" parent="."]
-position = Vector3(0, 1.45, -0.2)
+position = Vector3(0, 1.48, -0.25)
 
 [node name="TurretMesh" type="MeshInstance3D" parent="Turret"]
 mesh = SubResource("TurretMeshData")
+material_override = SubResource("TurretMat")
 
-[node name="Muzzle" type="Node3D" parent="Turret"]
-position = Vector3(0, 0, -2.0)
+[node name="GunMantlet" type="MeshInstance3D" parent="Turret"]
+mesh = SubResource("GunMantletMesh")
+material_override = SubResource("TurretMat")
+position = Vector3(0, 0.03, -0.82)
+
+[node name="Barrel" type="MeshInstance3D" parent="Turret"]
+mesh = SubResource("BarrelMesh")
+material_override = SubResource("TurretMat")
+position = Vector3(0, 0.03, -2.0)
+rotation_degrees = Vector3(90, 0, 0)
+
+[node name="Muzzle" type="Marker3D" parent="Turret"]
+position = Vector3(0, 0.03, -3.78)
 
 [node name="Components" type="Node" parent="."]
 
 [node name="Engine" type="Node" parent="Components"]
-script = ExtResource("2")
+script = ExtResource("2_engine")
 
 [node name="AmmoRack" type="Node" parent="Components"]
-script = ExtResource("3")
+script = ExtResource("3_ammo")
 
 [node name="TurretRing" type="Node" parent="Components"]
-script = ExtResource("4")
+script = ExtResource("4_ring")
 
 [node name="Crew" type="Node" parent="Components"]
-script = ExtResource("5")
+script = ExtResource("5_crew")
 
 [node name="RepairTimer" type="Timer" parent="."]
 one_shot = true
