@@ -1,72 +1,97 @@
 class_name Projectile
 extends Node3D
 
-signal impact(position: Vector3, result: Dictionary)
-signal ricochet(position: Vector3, direction: Vector3)
+signal impact_registered(position: Vector3, normal: Vector3, angle_deg: float, penetrated: bool)
+signal ricochet(position: Vector3, normal: Vector3)
 
-@export var drag_coefficient: float = 0.32
-@export var projectile_diameter_mm: float = 75.0
-@export var projectile_mass_kg: float = 6.8
-@export var gravity: float = 9.80665
-@export var air_density: float = 1.225
-@export var max_lifetime_sec: float = 20.0
+const AIR_DENSITY: float = 1.225
+const GRAVITY: Vector3 = Vector3(0.0, -9.80665, 0.0)
+const MIN_SPEED_MS: float = 45.0
+const MAX_LIFETIME_SEC: float = 8.0
+const TICK_STEP_SEC: float = 1.0 / 120.0
 
-var velocity: Vector3 = Vector3.ZERO
-var penetration_mm: float = 0.0
-var shooter: Node = null
+var velocity_vector: Vector3 = Vector3.ZERO
+var projectile_mass_kg: float = 8.0
+var projectile_diameter_m: float = 0.08
+var drag_coefficient: float = 0.30
+var penetration_100m_mm: float = 100.0
+var shooter: Node3D
 var lifetime: float = 0.0
-var active: bool = true
+var active: bool = false
 
-func setup(origin: Vector3, direction: Vector3, muzzle_velocity: float, penetration: float, source: Node = null) -> void:
-	global_position = origin
-	velocity = direction.normalized() * muzzle_velocity
-	penetration_mm = penetration
-	shooter = source
+func setup(start_position: Vector3, direction: Vector3, data: TankData, owner_node: Node3D) -> void:
+	global_position = start_position
+	velocity_vector = direction.normalized() * data.muzzle_velocity_ms
+	projectile_mass_kg = maxf(0.1, data.projectile_mass_kg)
+	projectile_diameter_m = maxf(0.01, data.projectile_diameter_m)
+	drag_coefficient = clampf(data.projectile_drag_coefficient, 0.05, 0.8)
+	penetration_100m_mm = data.penetration_100m_mm
+	shooter = owner_node
+	lifetime = 0.0
+	active = true
+
+func _ready() -> void:
+	set_physics_process(true)
 
 func _physics_process(delta: float) -> void:
 	if not active:
 		return
 	lifetime += delta
-	if lifetime >= max_lifetime_sec:
+	if lifetime >= MAX_LIFETIME_SEC or velocity_vector.length() < MIN_SPEED_MS:
 		active = false
 		queue_free()
 		return
-	var old_position: Vector3 = global_position
-	var speed: float = velocity.length()
+	var remaining: float = delta
+	while remaining > 0.0:
+		var step: float = minf(TICK_STEP_SEC, remaining)
+		_step_simulation(step)
+		if not active:
+			break
+		remaining -= step
+
+func _step_simulation(delta: float) -> void:
+	var previous_position: Vector3 = global_position
+	var speed: float = velocity_vector.length()
+	var area: float = PI * pow(projectile_diameter_m * 0.5, 2.0)
+	var drag_force: float = 0.5 * AIR_DENSITY * speed * speed * drag_coefficient * area
+	var drag_accel: Vector3 = Vector3.ZERO
 	if speed > 0.01:
-		var area_m2: float = PI * pow(projectile_diameter_mm * 0.001 * 0.5, 2.0)
-		var drag_force: float = 0.5 * air_density * speed * speed * drag_coefficient * area_m2
-		var acceleration: Vector3 = -velocity.normalized() * (drag_force / maxf(projectile_mass_kg, 0.001))
-		velocity += (acceleration + Vector3.DOWN * gravity) * delta
-	global_position += velocity * delta
-	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(old_position, global_position)
-	query.exclude = [self, shooter]
-	query.collide_with_areas = true
+		drag_accel = -velocity_vector.normalized() * (drag_force / projectile_mass_kg)
+	velocity_vector += (GRAVITY + drag_accel) * delta
+	var next_position: Vector3 = previous_position + velocity_vector * delta
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(previous_position, next_position)
+	query.collision_mask = 1 | 2
+	query.collide_with_areas = false
 	query.collide_with_bodies = true
+	var shooter_rid: RID = shooter.get_rid() if is_instance_valid(shooter) else RID()
+	if shooter_rid.is_valid():
+		query.exclude = [shooter_rid]
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var hit: Dictionary = space.intersect_ray(query)
 	if not hit.is_empty():
-		_process_impact(hit)
-
-func _process_impact(hit: Dictionary) -> void:
-	active = false
-	var collider: Object = hit.get("collider") as Object
-	var position: Vector3 = hit.get("position", global_position) as Vector3
-	var normal: Vector3 = hit.get("normal", Vector3.UP) as Vector3
-	var travel_direction: Vector3 = velocity.normalized()
-	var incidence: float = rad_to_deg(acos(clampf(absf((-travel_direction).dot(normal)), 0.0, 1.0)))
-	var ricochet_angle: float = 70.0
-	var result: Dictionary = {"penetrated": false, "effective_armor_mm": 0.0, "impact_angle_deg": incidence, "spall_direction": travel_direction}
-	if collider != null and collider.has_method("resolve_armor_hit"):
-		result = collider.call("resolve_armor_hit", position, normal, travel_direction, penetration_mm, incidence) as Dictionary
-	if incidence > ricochet_angle or not bool(result.get("penetrated", false)):
-		if incidence > ricochet_angle:
-			ricochet.emit(position, velocity.bounce(normal).normalized())
-		else:
-			impact.emit(position, result)
-		queue_free()
+		_handle_impact(hit, previous_position, next_position)
 		return
-	if collider != null and collider.has_method("apply_spall"):
-		collider.call("apply_spall", position, travel_direction, penetration_mm)
-	impact.emit(position, result)
+	global_position = next_position
+	look_at(global_position + velocity_vector.normalized(), Vector3.UP)
+
+func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: Vector3) -> void:
+	var hit_position: Vector3 = hit["position"] as Vector3
+	var hit_normal: Vector3 = hit["normal"] as Vector3
+	var travel: Vector3 = (next_position - previous_position).normalized()
+	var incoming: Vector3 = -travel
+	var cosine: float = clampf(absf(hit_normal.normalized().dot(incoming)), 0.0, 1.0)
+	var angle_deg: float = rad_to_deg(acos(cosine))
+	if angle_deg > 70.0:
+		r icochet(hit_position, hit_normal)
+		return
+	if hit.get("collider", null) is Node and (hit["collider"] as Node).get_meta("battle_target", false):
+		GameState.projectile_impact.emit(hit["collider"] as Node, hit_position, hit_normal, travel, penetration_100m_mm, angle_deg)
+	impact_registered.emit(hit_position, hit_normal, angle_deg, false)
+	active = false
 	queue_free()
+
+func r icochet(position: Vector3, normal: Vector3) -> void:
+	ricochet.emit(position, normal)
+	velocity_vector = velocity_vector.bounce(normal).normalized() * velocity_vector.length() * 0.62
+	global_position = position + normal * 0.015
+	active = true
