@@ -35,19 +35,25 @@ func _make_label(position_value: Vector2, size_value: int) -> Label:
 
 func bind_tank(target: TankBase) -> void:
     tank = target
-    tank.tank_destroyed.connect(_on_destroyed)
-    tank.repair_started.connect(_on_repair_started)
-    tank.repair_finished.connect(_on_repair_finished)
-    tank.status_changed.connect(_on_status_changed)
+    if not tank.tank_destroyed.is_connected(_on_destroyed):
+        tank.tank_destroyed.connect(_on_destroyed)
+    if not tank.repair_started.is_connected(_on_repair_started):
+        tank.repair_started.connect(_on_repair_started)
+    if not tank.repair_finished.is_connected(_on_repair_finished):
+        tank.repair_finished.connect(_on_repair_finished)
+    if not tank.status_changed.is_connected(_on_status_changed):
+        tank.status_changed.connect(_on_status_changed)
     _on_status_changed()
 
 func _process(_delta: float) -> void:
     if not is_instance_valid(tank) or tank.tank_data == null:
         return
-    var reload_text: String = "READY"
     if tank.reload_remaining > 0.0:
-        reload_text = "RELOAD %0.1fs" % tank.reload_remaining
-    reload_label.text = reload_text
+        reload_label.text = "RELOAD %0.1fs" % tank.reload_remaining
+    elif tank.aim_remaining > 0.0:
+        reload_label.text = "AIM %0.1fs" % tank.aim_remaining
+    else:
+        reload_label.text = "READY"
     var engine_text: String = "OK"
     if not tank.engine.operational:
         engine_text = "DISABLED"
@@ -121,25 +127,22 @@ func _build_garage() -> void:
     _refresh_garage()
 
 func _on_tank_button_pressed(tank_name: String) -> void:
+    if GameState.match_active:
+        GameState.end_match()
     GameState.set_selected_tank(tank_name)
     _refresh_garage()
-    if is_instance_valid(player_preview_anchor()):
-        pass
     GameState.start_match(Vector3.ZERO)
     bind_tank(GameState.player_tank)
     garage_panel.visible = false
-
-func player_preview_anchor() -> Node:
-    return null
 
 func _refresh_garage() -> void:
     var data: TankData = GameState.get_selected_data()
     if data == null:
         garage_data.text = ""
         return
-    garage_data.text = "%s\n\n%s\n\nMASS  %.1f t\nENGINE  %.0f hp\nSPEED  %.0f / %.0f km/h\nARMOR  %.0f / %.0f / %.0f mm\nGUN  %.0f mm\nRELOAD  %.1f s\nVELOCITY  %.0f m/s\nPENETRATION  %.0f mm\n\nFIGHT STYLE\n%s" % [data.tank_name.to_upper(), data.description, data.mass_tons, data.engine_hp, data.top_speed_kmh, data.reverse_speed_kmh, data.armor_front_mm, data.armor_side_mm, data.armor_rear_mm, data.cannon_caliber_mm, data.reload_time_sec, data.muzzle_velocity_ms, data.penetration_100m_mm, data.description]
+    garage_data.text = "%s\n\nMASS %.1f t\nENGINE %.0f hp\nSPEED %.0f / %.0f km/h\nARMOR %.0f / %.0f / %.0f mm\nGUN %.0f mm\nRELOAD %.1f s\nVELOCITY %.0f m/s\nPENETRATION %.0f mm\n\n%s" % [data.tank_name.to_upper(), data.mass_tons, data.engine_hp, data.top_speed_kmh, data.reverse_speed_kmh, data.armor_front_mm, data.armor_side_mm, data.armor_rear_mm, data.cannon_caliber_mm, data.reload_time_sec, data.muzzle_velocity_ms, data.penetration_100m_mm, data.description]
     for button: Button in tank_buttons:
-        button.disabled = GameState.match_active and button.text == GameState.selected_tank_name
+        button.disabled = false
 
 func toggle_garage() -> void:
     if not is_instance_valid(garage_panel):
