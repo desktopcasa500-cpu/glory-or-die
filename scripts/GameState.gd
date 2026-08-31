@@ -6,6 +6,7 @@ signal match_ended(player_won: bool)
 signal projectile_impact(target: Node, hit_position: Vector3, hit_normal: Vector3, travel_direction: Vector3, penetration_mm: float, incidence_angle_deg: float)
 
 const TANK_SCENE: PackedScene = preload("res://scenes/TankBase.tscn")
+const TANK_ORDER: Array[String] = ["Churchill", "Hetzer", "IS-2", "KV-1", "Panther", "Panzer IV", "Pershing", "Sherman", "StuG III", "T-34", "Tiger", "Tiger II"]
 
 var selected_tank_name: String = "Panther"
 var player_tank: TankBase
@@ -41,10 +42,7 @@ func get_selected_data() -> TankData:
 	return tank_catalog.get(selected_tank_name) as TankData
 
 func get_tank_names() -> Array[String]:
-	var names: Array[String] = []
-	for key: Variant in tank_catalog.keys():
-		names.append(str(key))
-	return names
+	return TANK_ORDER.duplicate()
 
 func spawn_tank(tank_name: String, position: Vector3, player_controlled: bool) -> TankBase:
 	var data: TankData = tank_catalog.get(tank_name) as TankData
@@ -56,17 +54,16 @@ func spawn_tank(tank_name: String, position: Vector3, player_controlled: bool) -
 
 func start_match(origin: Vector3 = Vector3.ZERO) -> TankBase:
 	end_match()
-	player_tank = spawn_tank(selected_tank_name, origin + Vector3(0.0, 0.8, 7.0), true)
+	player_tank = spawn_tank(selected_tank_name, origin + Vector3(0.0, 0.0, 7.0), true)
 	player_tank.name = "PlayerTank"
 	if not player_tank.tank_destroyed.is_connected(_on_player_destroyed):
 		player_tank.tank_destroyed.connect(_on_player_destroyed)
 	bot_tanks.clear()
-	var names: Array[String] = get_tank_names()
 	var spawn_index: int = 0
-	for tank_name: String in names:
+	for tank_name: String in TANK_ORDER:
 		if tank_name == selected_tank_name or spawn_index >= 4:
 			continue
-		var bot_position: Vector3 = origin + Vector3(float(spawn_index * 16 - 24), 0.8, -28.0 - float(spawn_index % 2) * 8.0)
+		var bot_position: Vector3 = origin + Vector3(float(spawn_index * 16 - 24), 0.0, -28.0 - float(spawn_index % 2) * 8.0)
 		var bot: TankBase = spawn_tank(tank_name, bot_position, false)
 		bot.name = "Bot_%02d_%s" % [spawn_index, tank_name.replace(" ", "_")]
 		bot.tank_destroyed.connect(_on_bot_destroyed.bind(bot))
@@ -81,7 +78,7 @@ func end_match() -> void:
 	match_active = false
 	if is_instance_valid(player_tank):
 		player_tank.queue_free()
-	player_tank = null
+		player_tank = null
 	for bot: TankBase in bot_tanks:
 		if is_instance_valid(bot):
 			bot.queue_free()
