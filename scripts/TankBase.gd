@@ -32,6 +32,8 @@ var turret_input: float = 0.0
 var bot_cooldown: float = 0.0
 
 func _ready() -> void:
+	set_meta("battle_target", true)
+	GameState.projectile_impact.connect(_on_projectile_impact)
 	engine.destroyed.connect(_on_engine_destroyed)
 	engine.repaired.connect(_on_component_repaired)
 	engine.fire_risk_changed.connect(_on_fire_risk_changed)
@@ -52,6 +54,10 @@ func configure(data: TankData, player_controlled: bool) -> void:
 	reload_remaining = 0.0
 	aim_remaining = 0.0
 	bot_cooldown = 1.0
+
+func _exit_tree() -> void:
+	if GameState.projectile_impact.is_connected(_on_projectile_impact):
+		GameState.projectile_impact.disconnect(_on_projectile_impact)
 
 func _physics_process(delta: float) -> void:
 	if tank_data == null or destroyed:
@@ -134,6 +140,18 @@ func fire_cannon() -> void:
 	aim_remaining = tank_data.aim_time_sec * crew.aim_multiplier()
 	fired.emit(projectile)
 
+func _on_projectile_impact(target: Node, hit_position: Vector3, hit_normal: Vector3, travel_direction: Vector3, penetration_mm: float, incidence_angle_deg: float) -> void:
+	if target != self or destroyed:
+		return
+	var result: Dictionary = resolve_armor_hit(hit_position, hit_normal, travel_direction, penetration_mm, incidence_angle_deg)
+	if bool(result["penetrated"]):
+		apply_spall(hit_position, travel_direction, penetration_mm)
+	impact_registered(result)
+
+func impact_registered(result: Dictionary) -> void:
+	if bool(result["penetrated"]):
+		status_changed.emit()
+
 func resolve_armor_hit(hit_position: Vector3, hit_normal: Vector3, travel_direction: Vector3, projectile_penetration: float, incidence_angle: float) -> Dictionary:
 	var local_hit: Vector3 = to_local(hit_position)
 	var armor: float = tank_data.armor_side_mm
@@ -177,8 +195,11 @@ func apply_spall(hit_position: Vector3, direction: Vector3, projectile_penetrati
 			2:
 				turret_ring.apply_damage(severity, severity >= 80.0)
 			3:
-				crew.lose_member("gunner") if severity >= 55.0 else crew.lose_member("driver") if severity >= 42.0 else void
-		module_damaged.emit(["Engine", "AmmoRack", "TurretRing", "Crew"][index], severity)
+				if severity >= 55.0:
+					crew.lose_member("gunner")
+				elif severity >= 42.0:
+					crew.lose_member("driver")
+			module_damaged.emit(["Engine", "AmmoRack", "TurretRing", "Crew"][index], severity)
 	status_changed.emit()
 
 func start_repair() -> void:
@@ -198,6 +219,8 @@ func start_repair() -> void:
 func _find_repair_target() -> String:
 	if not engine.operational:
 		return "Engine"
+	if not ammo_rack.operational:
+		return "AmmoRack"
 	if not turret_ring.operational:
 		return "TurretRing"
 	if not crew.gunner_alive:
