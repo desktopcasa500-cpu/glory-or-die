@@ -58,6 +58,8 @@ func start_match(origin: Vector3 = Vector3.ZERO) -> TankBase:
 	end_match()
 	player_tank = spawn_tank(selected_tank_name, origin + Vector3(0.0, 0.8, 7.0), true)
 	player_tank.name = "PlayerTank"
+	if not player_tank.tank_destroyed.is_connected(_on_player_destroyed):
+		player_tank.tank_destroyed.connect(_on_player_destroyed)
 	bot_tanks.clear()
 	var names: Array[String] = get_tank_names()
 	var spawn_index: int = 0
@@ -67,6 +69,7 @@ func start_match(origin: Vector3 = Vector3.ZERO) -> TankBase:
 		var bot_position: Vector3 = origin + Vector3(float(spawn_index * 16 - 24), 0.8, -28.0 - float(spawn_index % 2) * 8.0)
 		var bot: TankBase = spawn_tank(tank_name, bot_position, false)
 		bot.name = "Bot_%02d_%s" % [spawn_index, tank_name.replace(" ", "_")]
+		bot.tank_destroyed.connect(_on_bot_destroyed.bind(bot))
 		bot_tanks.append(bot)
 		spawn_index += 1
 	match_active = true
@@ -88,3 +91,14 @@ func _on_player_destroyed() -> void:
 	if match_active:
 		match_active = false
 		match_ended.emit(false)
+
+func _on_bot_destroyed(_bot: TankBase) -> void:
+	if not match_active:
+		return
+	var survivors: int = 0
+	for bot: TankBase in bot_tanks:
+		if is_instance_valid(bot) and not bot.destroyed:
+			survivors += 1
+	if survivors == 0 and is_instance_valid(player_tank) and not player_tank.destroyed:
+		match_active = false
+		match_ended.emit(true)
