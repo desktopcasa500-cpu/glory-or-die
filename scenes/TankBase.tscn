@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource path="res://scripts/TankBase.gd" type="Script" id="1_tank"]
 [ext_resource path="res://scripts/components/EngineComponent.gd" type="Script" id="2_engine"]
@@ -7,33 +7,37 @@
 [ext_resource path="res://scripts/components/CrewComponent.gd" type="Script" id="5_crew"]
 
 [sub_resource type="BoxShape3D" id="HullShape"]
-size = Vector3(3.2, 1.4, 5.2)
-
+size = Vector3(3.2,1.4,5.2)
 [sub_resource type="BoxMesh" id="HullMesh"]
-size = Vector3(3.2, 1.4, 5.2)
-
+size = Vector3(3.2,1.4,5.2)
 [sub_resource type="CylinderMesh" id="TurretMeshData"]
 top_radius = 1.2
 bottom_radius = 1.28
 height = 0.72
 radial_segments = 16
-
 [sub_resource type="BoxMesh" id="GunMantletMesh"]
-size = Vector3(1.55, 0.5, 0.55)
-
+size = Vector3(1.55,0.5,0.55)
 [sub_resource type="CylinderMesh" id="BarrelMesh"]
 top_radius = 0.10
 bottom_radius = 0.13
 height = 3.5
 radial_segments = 10
-
+[sub_resource type="BoxMesh" id="TrackMesh"]
+size = Vector3(0.48,0.72,4.5)
+[sub_resource type="CylinderMesh" id="WheelMesh"]
+top_radius = 0.32
+bottom_radius = 0.32
+height = 0.20
+radial_segments = 12
 [sub_resource type="StandardMaterial3D" id="HullMat"]
-albedo_color = Color(0.22, 0.27, 0.21, 1)
+albedo_color = Color(0.22,0.27,0.21,1)
 roughness = 0.94
-
 [sub_resource type="StandardMaterial3D" id="TurretMat"]
-albedo_color = Color(0.24, 0.29, 0.23, 1)
+albedo_color = Color(0.24,0.29,0.23,1)
 roughness = 0.92
+[sub_resource type="StandardMaterial3D" id="TrackMat"]
+albedo_color = Color(0.055,0.062,0.055,1)
+roughness = 1.0
 
 [node name="TankBase" type="CharacterBody3D"]
 collision_layer = 2
@@ -42,47 +46,87 @@ script = ExtResource("1_tank")
 
 [node name="HullCollision" type="CollisionShape3D" parent="."]
 shape = SubResource("HullShape")
-position = Vector3(0, 0.7, 0)
-
+position = Vector3(0,0.7,0)
 [node name="HullMesh" type="MeshInstance3D" parent="."]
 mesh = SubResource("HullMesh")
 material_override = SubResource("HullMat")
-position = Vector3(0, 0.7, 0)
+position = Vector3(0,0.7,0)
+
+[node name="LeftTrack" type="MeshInstance3D" parent="."]
+mesh = SubResource("TrackMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(-1.72,0.40,0.05)
+[node name="RightTrack" type="MeshInstance3D" parent="."]
+mesh = SubResource("TrackMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(1.72,0.40,0.05)
+
+[node name="LeftWheel01" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(-1.98,0.42,-1.65)
+rotation_degrees = Vector3(90,0,0)
+[node name="LeftWheel02" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(-1.98,0.42,-0.55)
+rotation_degrees = Vector3(90,0,0)
+[node name="LeftWheel03" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(-1.98,0.42,0.55)
+rotation_degrees = Vector3(90,0,0)
+[node name="LeftWheel04" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(-1.98,0.42,1.65)
+rotation_degrees = Vector3(90,0,0)
+[node name="RightWheel01" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(1.98,0.42,-1.65)
+rotation_degrees = Vector3(90,0,0)
+[node name="RightWheel02" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(1.98,0.42,-0.55)
+rotation_degrees = Vector3(90,0,0)
+[node name="RightWheel03" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(1.98,0.42,0.55)
+rotation_degrees = Vector3(90,0,0)
+[node name="RightWheel04" type="MeshInstance3D" parent="."]
+mesh = SubResource("WheelMesh")
+material_override = SubResource("TrackMat")
+position = Vector3(1.98,0.42,1.65)
+rotation_degrees = Vector3(90,0,0)
 
 [node name="Turret" type="Node3D" parent="."]
-position = Vector3(0, 1.48, -0.25)
-
+position = Vector3(0,1.48,-0.25)
 [node name="TurretMesh" type="MeshInstance3D" parent="Turret"]
 mesh = SubResource("TurretMeshData")
 material_override = SubResource("TurretMat")
-
 [node name="GunMantlet" type="MeshInstance3D" parent="Turret"]
 mesh = SubResource("GunMantletMesh")
 material_override = SubResource("TurretMat")
-position = Vector3(0, 0.03, -0.82)
-
+position = Vector3(0,0.03,-0.82)
 [node name="Barrel" type="MeshInstance3D" parent="Turret"]
 mesh = SubResource("BarrelMesh")
 material_override = SubResource("TurretMat")
-position = Vector3(0, 0.03, -2.0)
-rotation_degrees = Vector3(90, 0, 0)
-
+position = Vector3(0,0.03,-2.0)
+rotation_degrees = Vector3(90,0,0)
 [node name="Muzzle" type="Marker3D" parent="Turret"]
-position = Vector3(0, 0.03, -3.78)
+position = Vector3(0,0.03,-3.78)
 
 [node name="Components" type="Node" parent="."]
-
 [node name="Engine" type="Node" parent="Components"]
 script = ExtResource("2_engine")
-
 [node name="AmmoRack" type="Node" parent="Components"]
 script = ExtResource("3_ammo")
-
 [node name="TurretRing" type="Node" parent="Components"]
 script = ExtResource("4_ring")
-
 [node name="Crew" type="Node" parent="Components"]
 script = ExtResource("5_crew")
-
 [node name="RepairTimer" type="Timer" parent="."]
 one_shot = true
