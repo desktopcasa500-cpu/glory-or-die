@@ -29,7 +29,7 @@ func setup(start_position: Vector3, direction: Vector3, data: TankData, owner_no
 	penetration_100m_mm = data.penetration_100m_mm
 	shooter = owner_node
 	lifetime = 0.0
-	r icochet_count = 0
+	ricochet_count = 0
 	active = true
 
 func _ready() -> void:
@@ -82,7 +82,7 @@ func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: 
 	var cosine: float = clampf(absf(hit_normal.normalized().dot(incoming)), 0.0, 1.0)
 	var angle_deg: float = rad_to_deg(acos(cosine))
 	if angle_deg > 70.0:
-		r_icoch et(hit_position, hit_normal)
+		_ricochet(hit_position, hit_normal)
 		return
 	var collider: Node = hit.get("collider", null) as Node
 	if is_instance_valid(collider) and collider.get_meta("battle_target", false):
@@ -91,7 +91,7 @@ func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: 
 	active = false
 	queue_free()
 
-func r_icoch et(position: Vector3, normal: Vector3) -> void:
+func _ricochet(position: Vector3, normal: Vector3) -> void:
 	if ricochet_count >= 3:
 		active = false
 		queue_free()
