@@ -1,10 +1,11 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource path="res://scripts/TankBase.gd" type="Script" id="1_tank"]
 [ext_resource path="res://scripts/components/EngineComponent.gd" type="Script" id="2_engine"]
 [ext_resource path="res://scripts/components/AmmoRackComponent.gd" type="Script" id="3_ammo"]
 [ext_resource path="res://scripts/components/TurretRingComponent.gd" type="Script" id="4_ring"]
 [ext_resource path="res://scripts/components/CrewComponent.gd" type="Script" id="5_crew"]
+[ext_resource path="res://scripts/DetailedTankModel.gd" type="Script" id="6_detail"]
 
 [sub_resource type="BoxShape3D" id="HullShape"]
 size = Vector3(3.2,1.4,5.2)
@@ -118,6 +119,9 @@ position = Vector3(0,0.03,-2.0)
 rotation_degrees = Vector3(90,0,0)
 [node name="Muzzle" type="Marker3D" parent="Turret"]
 position = Vector3(0,0.03,-3.78)
+
+[node name="DetailedModel" type="Node3D" parent="."]
+script = ExtResource("6_detail")
 
 [node name="Components" type="Node" parent="."]
 [node name="Engine" type="Node" parent="Components"]
