@@ -146,11 +146,7 @@ func _on_projectile_impact(target: Node, hit_position: Vector3, hit_normal: Vect
 	var result: Dictionary = resolve_armor_hit(hit_position, hit_normal, travel_direction, penetration_mm, incidence_angle_deg)
 	if bool(result["penetrated"]):
 		apply_spall(hit_position, travel_direction, penetration_mm)
-	impact_registered(result)
-
-func impact_registered(result: Dictionary) -> void:
-	if bool(result["penetrated"]):
-		status_changed.emit()
+	status_changed.emit()
 
 func resolve_armor_hit(hit_position: Vector3, hit_normal: Vector3, travel_direction: Vector3, projectile_penetration: float, incidence_angle: float) -> Dictionary:
 	var local_hit: Vector3 = to_local(hit_position)
@@ -176,8 +172,8 @@ func resolve_armor_hit(hit_position: Vector3, hit_normal: Vector3, travel_direct
 
 func apply_spall(hit_position: Vector3, direction: Vector3, projectile_penetration: float) -> void:
 	var local_hit: Vector3 = to_local(hit_position)
-	var local_direction: Vector3 = to_local(global_position + direction) - to_local(global_position)
-	local_direction = local_direction.normalized()
+	var local_direction: Vector3 = direction.normalized()
+	local_direction = Vector3(local_direction.x, local_direction.y, local_direction.z).normalized()
 	var module_points: Array[Vector3] = [Vector3(0.0, 0.55, 0.7), Vector3(0.0, 0.8, -0.55), Vector3(0.0, 1.0, 0.0), Vector3(0.65, 1.05, 0.0)]
 	var module_weights: Array[float] = [1.0, 1.0, 0.8, 0.55]
 	for index: int in range(module_points.size()):
@@ -283,6 +279,7 @@ func cook_off() -> void:
 	var turret_body: RigidBody3D = RigidBody3D.new()
 	turret_body.name = "EjectedTurret"
 	turret_body.global_transform = turret_mesh.global_transform
+	turret_body.mass = maxf(1.0, tank_data.mass_tons * 0.08)
 	turret_body.collision_layer = 0
 	turret_body.collision_mask = 0
 	get_tree().current_scene.add_child(turret_body)
@@ -292,8 +289,59 @@ func cook_off() -> void:
 	turret_body.add_child(mesh_copy)
 	turret_mesh.visible = false
 	turret_body.apply_central_impulse(Vector3.UP * (6.0 + tank_data.mass_tons * 0.03) - global_transform.basis.z * 2.0)
+	_spawn_cookoff_particles()
 	tank_destroyed.emit()
 	status_changed.emit()
+
+func _spawn_cookoff_particles() -> void:
+	var fire: GPUParticles3D = GPUParticles3D.new()
+	fire.name = "CookoffFire"
+	fire.amount = 20
+	fire.lifetime = 1.8
+	fire.one_shot = true
+	var fire_process: ParticleProcessMaterial = ParticleProcessMaterial.new()
+	fire_process.direction = Vector3.UP
+	fire_process.spread = 28.0
+	fire_process.initial_velocity_min = 1.2
+	fire_process.initial_velocity_max = 3.2
+	fire_process.scale_min = 0.12
+	fire_process.scale_max = 0.28
+	fire_process.gravity = Vector3(0.0, 0.3, 0.0)
+	fire.process_material = fire_process
+	var fire_quad: QuadMesh = QuadMesh.new()
+	fire_quad.size = Vector2(0.5, 0.5)
+	var fire_mat: StandardMaterial3D = StandardMaterial3D.new()
+	fire_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	fire_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	fire_mat.albedo_color = Color(1.0, 0.42, 0.05, 0.82)
+	fire_quad.material = fire_mat
+	fire.draw_pass_1 = fire_quad
+	add_child(fire)
+	fire.restart()
+	var smoke: GPUParticles3D = GPUParticles3D.new()
+	smoke.name = "CookoffSmoke"
+	smoke.amount = 28
+	smoke.lifetime = 3.6
+	smoke.one_shot = true
+	var smoke_process: ParticleProcessMaterial = ParticleProcessMaterial.new()
+	smoke_process.direction = Vector3.UP
+	smoke_process.spread = 35.0
+	smoke_process.initial_velocity_min = 0.6
+	smoke_process.initial_velocity_max = 1.8
+	smoke_process.scale_min = 0.18
+	smoke_process.scale_max = 0.42
+	smoke_process.gravity = Vector3(0.0, -0.05, 0.0)
+	smoke.process_material = smoke_process
+	var smoke_quad: QuadMesh = QuadMesh.new()
+	smoke_quad.size = Vector2(0.8, 0.8)
+	var smoke_mat: StandardMaterial3D = StandardMaterial3D.new()
+	smoke_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	smoke_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	smoke_mat.albedo_color = Color(0.18, 0.18, 0.18, 0.55)
+	smoke_quad.material = smoke_mat
+	smoke.draw_pass_1 = smoke_quad
+	add_child(smoke)
+	smoke.restart()
 
 func destroy_vehicle() -> void:
 	if destroyed:
