@@ -23,17 +23,22 @@ func reset_state() -> void:
 func apply_damage(amount: float) -> void:
     if not operational:
         return
-    health = maxf(0.0, health - amount)
+    health = maxf(0.0, health - maxf(0.0, amount))
     if health <= 0.0:
-        operational = false
-        fire_risk = true
-        fire_tick = 0.0
-        fire_risk_changed.emit(true)
-        destroyed.emit(self)
+        _disable_engine()
     elif health < max_health * 0.35 and not fire_risk:
         fire_risk = true
         fire_tick = 0.0
         fire_risk_changed.emit(true)
+
+func _disable_engine() -> void:
+    if not operational:
+        return
+    operational = false
+    fire_risk = true
+    fire_tick = 0.0
+    fire_risk_changed.emit(true)
+    destroyed.emit(self)
 
 func repair_basic() -> void:
     health = maxf(35.0, max_health * 0.40)
@@ -47,7 +52,13 @@ func _physics_process(delta: float) -> void:
     if not fire_risk:
         return
     fire_tick += delta
-    if fire_tick >= 1.5:
-        fire_tick = 0.0
+    if fire_tick < 1.5:
+        return
+    fire_tick = 0.0
+    if operational:
         health = maxf(0.0, health - 3.0)
-        fire_risk_changed.emit(true)
+    else:
+        health = maxf(0.0, health - 2.0)
+    fire_risk_changed.emit(true)
+    if health <= 0.0 and operational:
+        _disable_engine()
