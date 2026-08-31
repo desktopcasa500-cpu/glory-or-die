@@ -39,30 +39,23 @@ extends Resource
 @export var description: String = ""
 
 static func build(name_value: String, mass: float, hp: float, speed: float, reverse: float, front: float, side: float, rear: float, caliber: float, reload: float, velocity: float, penetration: float, traverse: float, aim: float, acceleration: float, efficiency: float, projectile_mass: float, projectile_diameter: float, drag: float, turn_rate: float, bot_range: float, hull: float, description_text: String) -> TankData:
-    var data: TankData = TankData.new()
-    data.tank_name = name_value
-    data.mass_tons = mass
-    data.engine_hp = hp
-    data.top_speed_kmh = speed
-    data.reverse_speed_kmh = reverse
-    data.armor_front_mm = front
-    data.armor_side_mm = side
-    data.armor_rear_mm = rear
-    data.cannon_caliber_mm = caliber
-    data.reload_time_sec = reload
-    data.muzzle_velocity_ms = velocity
-    data.penetration_100m_mm = penetration
-    data.turret_traverse_deg_sec = traverse
-    data.aim_time_sec = aim
-    data.acceleration_factor = acceleration
-    data.drivetrain_efficiency = efficiency
-    data.projectile_mass_kg = projectile_mass
-    data.projectile_diameter_m = projectile_diameter
-    data.projectile_drag_coefficient = drag
-    data.hull_turn_deg_sec = turn_rate
-    data.bot_fire_range = bot_range
-    data.hull_health = hull
-    data.description = description_text
-    data.impact_damage_factor = 34.0
-    data.max_hull_damage = 68.0
+    var data := TankData.new()
+    data.tank_name=name_value; data.mass_tons=mass; data.engine_hp=hp; data.top_speed_kmh=speed; data.reverse_speed_kmh=reverse
+    data.armor_front_mm=front; data.armor_side_mm=side; data.armor_rear_mm=rear; data.cannon_caliber_mm=caliber; data.reload_time_sec=reload
+    data.muzzle_velocity_ms=velocity; data.penetration_100m_mm=penetration; data.turret_traverse_deg_sec=traverse; data.aim_time_sec=aim
+    data.acceleration_factor=acceleration; data.drivetrain_efficiency=efficiency; data.projectile_mass_kg=projectile_mass; data.projectile_diameter_m=projectile_diameter
+    data.projectile_drag_coefficient=drag; data.hull_turn_deg_sec=turn_rate; data.bot_fire_range=bot_range; data.hull_health=hull; data.description=description_text
+    match name_value:
+        "Churchill": data.ability_name="Fortify"; data.ability_duration=7.0; data.ability_cooldown=24.0
+        "Hetzer": data.ability_name="Ambush"; data.ability_duration=5.0; data.ability_cooldown=26.0
+        "IS-2": data.ability_name="Devastation"; data.ability_duration=6.0; data.ability_cooldown=30.0
+        "KV-1": data.ability_name="Fortify"; data.ability_duration=8.0; data.ability_cooldown=28.0
+        "Panther": data.ability_name="Deadeye"; data.ability_duration=5.0; data.ability_cooldown=23.0
+        "Panzer IV": data.ability_name="Focus"; data.ability_duration=6.0; data.ability_cooldown=22.0
+        "Pershing": data.ability_name="Stabilize"; data.ability_duration=8.0; data.ability_cooldown=26.0
+        "Sherman": data.ability_name="Overdrive"; data.ability_duration=6.0; data.ability_cooldown=22.0
+        "StuG III": data.ability_name="Ambush"; data.ability_duration=5.0; data.ability_cooldown=26.0
+        "T-34": data.ability_name="Overdrive"; data.ability_duration=7.0; data.ability_cooldown=24.0
+        "Tiger": data.ability_name="Rapid Turret"; data.ability_duration=8.0; data.ability_cooldown=27.0
+        "Tiger II": data.ability_name="Fortify"; data.ability_duration=9.0; data.ability_cooldown=32.0
     return data
