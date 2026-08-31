@@ -26,18 +26,18 @@ func _process(delta: float) -> void:
 
 func _build_catalog() -> void:
     tank_catalog.clear()
-    tank_catalog["Churchill"] = TankData.build("Churchill", 38.5, 350.0, 25.0, 3.2, 102.0, 64.0, 51.0, 75.0, 5.2, 619.0, 91.0, 26.0, 2.1, 0.68, 0.79, 6.7, 0.076, 0.31, 18.0, 58.0, 100.0, "Heavy infantry tank: dense frontal protection, slow mobility and dependable rapid fire.")
-    tank_catalog["Hetzer"] = TankData.build("Hetzer", 15.8, 160.0, 42.0, 7.0, 60.0, 20.0, 20.0, 75.0, 4.7, 925.0, 120.0, 0.0, 1.7, 0.94, 0.88, 6.8, 0.075, 0.29, 28.0, 66.0, 86.0, "Low-profile tank destroyer with a very strong sloped front and no traversing turret.")
-    tank_catalog["IS-2"] = TankData.build("IS-2", 46.0, 520.0, 37.0, 6.0, 100.0, 90.0, 60.0, 122.0, 19.5, 800.0, 180.0, 18.0, 3.2, 0.72, 0.83, 25.0, 0.122, 0.27, 16.0, 64.0, 115.0, "Heavy breakthrough tank with a devastating 122 mm cannon and slow reload cycle.")
-    tank_catalog["KV-1"] = TankData.build("KV-1", 45.0, 500.0, 34.0, 5.0, 75.0, 70.0, 70.0, 76.2, 8.5, 680.0, 92.0, 18.0, 2.7, 0.70, 0.78, 6.8, 0.076, 0.31, 17.0, 56.0, 105.0, "Early heavy tank with broad protection and poor power-to-weight performance.")
-    tank_catalog["Panther"] = TankData.build("Panther", 44.8, 700.0, 46.0, 4.0, 80.0, 50.0, 40.0, 75.0, 7.0, 935.0, 138.0, 22.0, 1.6, 0.88, 0.86, 6.8, 0.075, 0.28, 20.0, 72.0, 115.0, "Long-range medium tank with excellent gun velocity, accuracy and sloped frontal hull.")
-    tank_catalog["Panzer IV"] = TankData.build("Panzer IV", 25.0, 300.0, 38.0, 8.0, 50.0, 30.0, 20.0, 75.0, 6.0, 740.0, 99.0, 25.0, 1.9, 0.87, 0.83, 6.8, 0.075, 0.30, 23.0, 58.0, 92.0, "Balanced medium tank with straight armor and a practical rate of fire.")
-    tank_catalog["Pershing"] = TankData.build("Pershing", 41.7, 500.0, 40.0, 8.0, 102.0, 76.0, 51.0, 90.0, 8.2, 853.0, 126.0, 20.0, 1.9, 0.81, 0.84, 10.0, 0.090, 0.29, 19.0, 68.0, 108.0, "Versatile medium-heavy tank with a potent 90 mm cannon and balanced protection.")
-    tank_catalog["Sherman"] = TankData.build("Sherman", 30.3, 400.0, 40.0, 7.0, 51.0, 38.0, 38.0, 75.0, 5.8, 792.0, 92.0, 30.0, 1.4, 0.96, 0.83, 6.8, 0.075, 0.30, 26.0, 62.0, 98.0, "Highly mobile medium tank with quick turret traverse and stable gun handling.")
-    tank_catalog["StuG III"] = TankData.build("StuG III", 24.0, 300.0, 40.0, 7.0, 80.0, 30.0, 30.0, 75.0, 5.0, 925.0, 120.0, 0.0, 1.6, 0.90, 0.85, 6.8, 0.075, 0.29, 27.0, 64.0, 96.0, "Low silhouette assault gun with strong frontal plate and quick firing cycle.")
-    tank_catalog["T-34"] = TankData.build("T-34", 30.9, 500.0, 53.0, 7.0, 47.0, 45.0, 45.0, 76.2, 5.7, 680.0, 94.0, 34.0, 1.5, 1.04, 0.81, 6.8, 0.076, 0.31, 30.0, 70.0, 104.0, "Fast Soviet medium tank with strong mobility, sloped armor and agile steering.")
-    tank_catalog["Tiger"] = TankData.build("Tiger", 56.9, 650.0, 38.0, 8.0, 100.0, 82.0, 82.0, 88.0, 8.2, 773.0, 148.0, 28.0, 1.9, 0.71, 0.88, 10.0, 0.088, 0.29, 17.0, 66.0, 112.0, "Box-armored heavy tank with highly accurate 88 mm cannon and substantial side protection.")
-    tank_catalog["Tiger II"] = TankData.build("Tiger II", 69.8, 800.0, 38.0, 5.0, 150.0, 80.0, 80.0, 88.0, 10.5, 1000.0, 165.0, 22.0, 2.2, 0.63, 0.90, 10.0, 0.088, 0.27, 14.0, 70.0, 128.0, "Very heavy tank with massive frontal protection and a lethal high-velocity KwK 43.")
+    tank_catalog["Churchill"] = TankData.build("Churchill", 38.5, 350.0, 25.0, 3.2, 102.0, 64.0, 51.0, 75.0, 5.2, 619.0, 91.0, 26.0, 2.1, 0.68, 0.79, 6.7, 0.076, 0.31, 18.0, 58.0, 100.0, "Heavy infantry tank with dense frontal protection, low speed and dependable rapid fire.")
+    tank_catalog["Hetzer"] = TankData.build("Hetzer", 15.8, 160.0, 42.0, 7.0, 60.0, 20.0, 20.0, 75.0, 4.7, 925.0, 120.0, 0.0, 1.7, 0.94, 0.88, 6.8, 0.075, 0.29, 28.0, 66.0, 86.0, "Ultra-low tank destroyer with sharply sloped frontal armor and no turret traverse.")
+    tank_catalog["IS-2"] = TankData.build("IS-2", 46.0, 520.0, 37.0, 6.0, 100.0, 90.0, 60.0, 122.0, 19.5, 800.0, 180.0, 18.0, 3.2, 0.72, 0.83, 25.0, 0.122, 0.27, 16.0, 64.0, 115.0, "Heavy breakthrough tank with a devastating 122 mm cannon and very slow reload.")
+    tank_catalog["KV-1"] = TankData.build("KV-1", 45.0, 500.0, 34.0, 5.0, 75.0, 70.0, 70.0, 76.2, 8.5, 680.0, 92.0, 18.0, 2.7, 0.70, 0.78, 6.8, 0.076, 0.31, 17.0, 56.0, 105.0, "Early heavy tank with near-uniform protection and reduced mobility.")
+    tank_catalog["Panther"] = TankData.build("Panther", 44.8, 700.0, 46.0, 4.0, 80.0, 50.0, 40.0, 75.0, 7.0, 935.0, 138.0, 22.0, 1.6, 0.88, 0.86, 6.8, 0.075, 0.28, 20.0, 72.0, 115.0, "Long-range medium tank with exceptional gun velocity, precision and sloped front.")
+    tank_catalog["Panzer IV"] = TankData.build("Panzer IV", 25.0, 300.0, 38.0, 8.0, 50.0, 30.0, 20.0, 75.0, 6.0, 740.0, 99.0, 25.0, 1.9, 0.87, 0.83, 6.8, 0.075, 0.30, 23.0, 58.0, 92.0, "Balanced medium tank with straight armor and a useful firing tempo.")
+    tank_catalog["Pershing"] = TankData.build("Pershing", 41.7, 500.0, 40.0, 8.0, 102.0, 76.0, 51.0, 90.0, 8.2, 853.0, 126.0, 20.0, 1.9, 0.81, 0.84, 10.0, 0.090, 0.29, 19.0, 68.0, 108.0, "Versatile medium-heavy tank centered on a capable 90 mm gun.")
+    tank_catalog["Sherman"] = TankData.build("Sherman", 30.3, 400.0, 40.0, 7.0, 51.0, 38.0, 38.0, 75.0, 5.8, 792.0, 92.0, 30.0, 1.4, 0.96, 0.83, 6.8, 0.075, 0.30, 26.0, 62.0, 98.0, "Highly versatile medium tank with fast turret traverse and stable gun handling.")
+    tank_catalog["StuG III"] = TankData.build("StuG III", 24.0, 300.0, 40.0, 7.0, 80.0, 30.0, 30.0, 75.0, 5.0, 925.0, 120.0, 0.0, 1.6, 0.90, 0.85, 6.8, 0.075, 0.29, 27.0, 64.0, 96.0, "Low silhouette assault gun with a strong frontal plate and quick reload.")
+    tank_catalog["T-34"] = TankData.build("T-34", 30.9, 500.0, 53.0, 7.0, 47.0, 45.0, 45.0, 76.2, 5.7, 680.0, 94.0, 34.0, 1.5, 1.04, 0.81, 6.8, 0.076, 0.31, 30.0, 70.0, 104.0, "Fast medium tank with strong mobility, sloped armor and agile handling.")
+    tank_catalog["Tiger"] = TankData.build("Tiger", 56.9, 650.0, 38.0, 8.0, 100.0, 82.0, 82.0, 88.0, 8.2, 773.0, 148.0, 28.0, 1.9, 0.71, 0.88, 10.0, 0.088, 0.29, 17.0, 66.0, 112.0, "Box-armored heavy tank with an accurate high-velocity 88 mm gun.")
+    tank_catalog["Tiger II"] = TankData.build("Tiger II", 69.8, 800.0, 38.0, 5.0, 150.0, 80.0, 80.0, 88.0, 10.5, 1000.0, 165.0, 22.0, 2.2, 0.63, 0.90, 10.0, 0.088, 0.27, 14.0, 70.0, 128.0, "Extremely heavy tank with massive frontal armor and lethal KwK 43 ballistics.")
 
 func set_selected_tank(tank_name: String) -> bool:
     if not tank_catalog.has(tank_name):
@@ -120,7 +120,6 @@ func build_barrel_mesh(profile: Dictionary) -> CylinderMesh:
     mesh.bottom_radius = 0.14
     mesh.height = profile.get("barrel_length", 3.6)
     mesh.radial_segments = 10
-    mesh.rotation_degrees = Vector3(90.0, 0.0, 0.0)
     return mesh
 
 func spawn_tank(tank_name: String, position: Vector3, player_controlled: bool) -> TankBase:
@@ -160,14 +159,16 @@ func start_match(origin: Vector3 = Vector3.ZERO) -> TankBase:
     return player_tank
 
 func find_nearest_enemy(source: TankBase) -> TankBase:
+    if source == null:
+        return null
     var best: TankBase
     var best_distance: float = INF
     if source.is_player:
         for bot: TankBase in bot_tanks:
             if is_instance_valid(bot) and not bot.destroyed:
-                var d: float = source.global_position.distance_squared_to(bot.global_position)
-                if d < best_distance:
-                    best_distance = d
+                var distance_sq: float = source.global_position.distance_squared_to(bot.global_position)
+                if distance_sq < best_distance:
+                    best_distance = distance_sq
                     best = bot
         return best
     if is_instance_valid(player_tank) and not player_tank.destroyed:
@@ -189,7 +190,7 @@ func _on_player_destroyed() -> void:
         match_active = false
         match_ended.emit(false)
 
-func _on_bot_destroyed(bot: TankBase) -> void:
+func _on_bot_destroyed(_bot: TankBase) -> void:
     kills += 1
     if not match_active:
         return
