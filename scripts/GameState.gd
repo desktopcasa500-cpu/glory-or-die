@@ -3,6 +3,7 @@ extends Node
 signal player_tank_changed(tank: TankBase)
 signal match_started(player: TankBase, enemies: Array[TankBase])
 signal match_ended(player_won: bool)
+signal projectile_impact(target: Node, hit_position: Vector3, hit_normal: Vector3, travel_direction: Vector3, penetration_mm: float, incidence_angle_deg: float)
 
 const TANK_SCENE: PackedScene = preload("res://scenes/TankBase.tscn")
 
@@ -41,23 +42,22 @@ func get_selected_data() -> TankData:
 
 func get_tank_names() -> Array[String]:
 	var names: Array[String] = []
-	for key: String in tank_catalog.keys():
-		names.append(key)
+	for key: Variant in tank_catalog.keys():
+		names.append(str(key))
 	return names
 
 func spawn_tank(tank_name: String, position: Vector3, player_controlled: bool) -> TankBase:
 	var data: TankData = tank_catalog.get(tank_name) as TankData
 	var tank: TankBase = TANK_SCENE.instantiate() as TankBase
 	tank.global_position = position
-	tank.configure(data, player_controlled)
 	get_tree().current_scene.add_child(tank)
+	tank.configure(data, player_controlled)
 	return tank
 
 func start_match(origin: Vector3 = Vector3.ZERO) -> TankBase:
 	end_match()
 	player_tank = spawn_tank(selected_tank_name, origin + Vector3(0.0, 0.8, 7.0), true)
 	player_tank.name = "PlayerTank"
-	player_tank.tank_destroyed.connect(_on_player_destroyed)
 	bot_tanks.clear()
 	var names: Array[String] = get_tank_names()
 	var spawn_index: int = 0
@@ -85,7 +85,6 @@ func end_match() -> void:
 	bot_tanks.clear()
 
 func _on_player_destroyed() -> void:
-	if not match_active:
-		return
-	match_active = false
-	match_ended.emit(false)
+	if match_active:
+		match_active = false
+		match_ended.emit(false)
