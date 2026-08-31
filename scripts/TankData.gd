@@ -9,36 +9,37 @@ extends Resource
 @export var armor_front_mm: float = 0.0
 @export var armor_side_mm: float = 0.0
 @export var armor_rear_mm: float = 0.0
+@export var cannon_caliber_mm: float = 0.0
+@export var reload_time_sec: float = 0.0
+@export var muzzle_velocity_ms: float = 0.0
+@export var penetration_100m_mm: float = 0.0
+@export var turret_traverse_deg_sec: float = 0.0
+@export var aim_time_sec: float = 1.6
+@export var acceleration_factor: float = 1.0
+@export var drivetrain_efficiency: float = 0.82
+@export var projectile_mass_kg: float = 8.0
+@export var projectile_diameter_m: float = 0.08
+@export var projectile_drag_coefficient: float = 0.28
 
-func configure(
-	p_name: String,
-	p_mass_tons: float,
-	p_engine_hp: float,
-	p_top_speed_kmh: float,
-	p_reverse_speed_kmh: float,
-	p_armor_front_mm: float,
-	p_armor_side_mm: float,
-	p_armor_rear_mm: float
-) -> void:
-	tank_name = p_name
-	mass_tons = p_mass_tons
-	engine_hp = p_engine_hp
-	top_speed_kmh = p_top_speed_kmh
-	reverse_speed_kmh = p_reverse_speed_kmh
-	armor_front_mm = p_armor_front_mm
-	armor_side_mm = p_armor_side_mm
-	armor_rear_mm = p_armor_rear_mm
-
-func duplicate_data() -> TankData:
-	var result: TankData = TankData.new()
-	result.configure(
-		tank_name,
-		mass_tons,
-		engine_hp,
-		top_speed_kmh,
-		reverse_speed_kmh,
-		armor_front_mm,
-		armor_side_mm,
-		armor_rear_mm
-	)
-	return result
+static func build(name_value: String, mass: float, hp: float, speed: float, reverse: float, front: float, side: float, rear: float, caliber: float, reload: float, velocity: float, penetration: float, traverse: float, aim: float, acceleration: float, efficiency: float, projectile_mass: float, projectile_diameter: float, drag: float) -> TankData:
+	var data: TankData = TankData.new()
+	data.tank_name = name_value
+	data.mass_tons = mass
+	data.engine_hp = hp
+	data.top_speed_kmh = speed
+	data.reverse_speed_kmh = reverse
+	data.armor_front_mm = front
+	data.armor_side_mm = side
+	data.armor_rear_mm = rear
+	data.cannon_caliber_mm = caliber
+	data.reload_time_sec = reload
+	data.muzzle_velocity_ms = velocity
+	data.penetration_100m_mm = penetration
+	data.turret_traverse_deg_sec = traverse
+	data.aim_time_sec = aim
+	data.acceleration_factor = acceleration
+	data.drivetrain_efficiency = efficiency
+	data.projectile_mass_kg = projectile_mass
+	data.projectile_diameter_m = projectile_diameter
+	data.projectile_drag_coefficient = drag
+	return data
