@@ -1,6 +1,6 @@
 extends Node3D
 
-var player: Node3D
+var player: TankBase
 
 func _ready() -> void:
 	RenderingServer.set_default_clear_color(Color("101214"))
@@ -22,14 +22,21 @@ func _ready() -> void:
 	camera.look_at(Vector3(0.0, 1.0, 0.0))
 	camera.current = true
 	add_child(camera)
-	player = GameState.start_match(Vector3.ZERO)
-	var hud: CanvasLayer = CanvasLayer.new()
-	var label: Label = Label.new()
-	label.position = Vector2(24.0, 22.0)
-	label.text = "GLORY OR DIE\nWASD — movimento    Q/E — torre    Mouse — disparo    F — reparo"
-	label.add_theme_font_size_override("font_size", 18)
-	hud.add_child(label)
+	player = GameState.start_match(Vector3.ZERO) as TankBase
+	var hud: CombatHUD = CombatHUD.new()
 	add_child(hud)
+	hud.bind_tank(player)
+	var xray: XRayPanel = XRayPanel.new()
+	xray.position = Vector2(0.0, 400.0)
+	xray.size = Vector2(400.0, 280.0)
+	xray.visible = false
+	hud.add_child(xray)
+	xray.bind_tank(player)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.keycode == KEY_X and player != null:
+		var panel: XRayPanel = get_node("CombatHUD/XRayPanel") as XRayPanel
+		panel.visible = not panel.visible
 
 func _exit_tree() -> void:
 	if is_instance_valid(GameState):
