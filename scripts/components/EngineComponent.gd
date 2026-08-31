@@ -9,29 +9,45 @@ signal fire_risk_changed(active: bool)
 var health: float = 100.0
 var operational: bool = true
 var fire_risk: bool = false
+var fire_tick: float = 0.0
 
 func _ready() -> void:
-	health = max_health
+    reset_state()
+
+func reset_state() -> void:
+    health = max_health
+    operational = true
+    fire_risk = false
+    fire_tick = 0.0
 
 func apply_damage(amount: float) -> void:
-	if not operational:
-		return
-	health = maxf(0.0, health - amount)
-	if health <= 0.0:
-		operational = false
-		fire_risk = true
-		fire_risk_changed.emit(true)
-		destroyed.emit(self)
+    if not operational:
+        return
+    health = maxf(0.0, health - amount)
+    if health <= 0.0:
+        operational = false
+        fire_risk = true
+        fire_tick = 0.0
+        fire_risk_changed.emit(true)
+        destroyed.emit(self)
+    elif health < max_health * 0.35 and not fire_risk:
+        fire_risk = true
+        fire_tick = 0.0
+        fire_risk_changed.emit(true)
 
 func repair_basic() -> void:
-	health = maxf(25.0, max_health * 0.35)
-	operational = true
-	fire_risk = false
-	fire_risk_changed.emit(false)
-	repaired.emit(self)
+    health = maxf(35.0, max_health * 0.40)
+    operational = true
+    fire_risk = false
+    fire_tick = 0.0
+    fire_risk_changed.emit(false)
+    repaired.emit(self)
 
 func _physics_process(delta: float) -> void:
-	if fire_risk and is_inside_tree():
-		var accumulator: float = delta
-		if accumulator >= 0.25:
-			fire_risk_changed.emit(true)
+    if not fire_risk:
+        return
+    fire_tick += delta
+    if fire_tick >= 1.5:
+        fire_tick = 0.0
+        health = maxf(0.0, health - 3.0)
+        fire_risk_changed.emit(true)
