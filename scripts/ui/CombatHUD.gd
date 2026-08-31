@@ -2,160 +2,226 @@ class_name CombatHUD
 extends CanvasLayer
 
 var tank: TankBase
+var root: Control
+var top_left: Label
+var objective_label: Label
+var reward_label: Label
 var status_label: Label
 var reload_label: Label
-var speed_label: Label
-var ballistic_label: Label
-var match_label: Label
-var hint_label: Label
+var stats_label: Label
+var ability_label: Label
+var feed_box: RichTextLabel
+var garage: Panel
+var garage_info: Label
 var xray_panel: XRayPanel
-var garage_panel: Panel
-var garage_title: Label
-var garage_data: Label
+var pause_panel: Panel
 var tank_buttons: Array[Button] = []
 
 func _ready() -> void:
-    status_label = _make_label(Vector2(24.0, 18.0), 22)
-    reload_label = _make_label(Vector2(24.0, 50.0), 16)
-    speed_label = _make_label(Vector2(24.0, 76.0), 16)
-    ballistic_label = _make_label(Vector2(24.0, 102.0), 14)
-    match_label = _make_label(Vector2(930.0, 20.0), 16)
-    hint_label = _make_label(Vector2(24.0, 680.0), 14)
-    hint_label.text = "WASD DRIVE   Q/E TURRET   LMB FIRE   F REPAIR   X X-RAY   R GARAGE"
+    root = Control.new()
+    root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    add_child(root)
+    top_left = _label(Vector2(24,18),24)
+    objective_label = _label(Vector2(24,52),18)
+    status_label = _label(Vector2(24,92),20)
+    reload_label = _label(Vector2(24,120),16)
+    stats_label = _label(Vector2(24,148),15)
+    ability_label = _label(Vector2(24,176),15)
+    reward_label = _label(Vector2(1010,18),16)
+    feed_box = RichTextLabel.new()
+    feed_box.position = Vector2(24,530)
+    feed_box.size = Vector2(600,155)
+    feed_box.bbcode_enabled = true
+    feed_box.fit_content = false
+    feed_box.add_theme_font_size_override("normal_font_size",14)
+    root.add_child(feed_box)
+    var cross := Label.new()
+    cross.text = "+"
+    cross.position = Vector2(638,350)
+    cross.add_theme_font_size_override("font_size",28)
+    root.add_child(cross)
+    var help := _label(Vector2(24,690),13)
+    help.text = "WASD DRIVE  •  Q/E TURRET  •  LMB FIRE  •  F REPAIR  •  SPACE ABILITY  •  G GARAGE  •  X X-RAY  •  ESC PAUSE"
     _build_garage()
-    GameState.match_started.connect(_on_match_started)
+    _build_xray()
+    GameState.wave_started.connect(_on_wave_started)
+    GameState.progression_changed.connect(_refresh_meta)
     GameState.match_ended.connect(_on_match_ended)
 
-func _make_label(position_value: Vector2, size_value: int) -> Label:
-    var label: Label = Label.new()
-    label.position = position_value
-    label.add_theme_font_size_override("font_size", size_value)
-    add_child(label)
-    return label
+func _label(pos: Vector2, size: int) -> Label:
+    var l := Label.new()
+    l.position = pos
+    l.add_theme_font_size_override("font_size",size)
+    root.add_child(l)
+    return l
 
 func bind_tank(target: TankBase) -> void:
     tank = target
-    if not tank.tank_destroyed.is_connected(_on_destroyed):
-        tank.tank_destroyed.connect(_on_destroyed)
-    if not tank.repair_started.is_connected(_on_repair_started):
-        tank.repair_started.connect(_on_repair_started)
-    if not tank.repair_finished.is_connected(_on_repair_finished):
-        tank.repair_finished.connect(_on_repair_finished)
-    if not tank.status_changed.is_connected(_on_status_changed):
-        tank.status_changed.connect(_on_status_changed)
+    if not is_instance_valid(tank):
+        return
+    if not tank.tank_destroyed.is_connected(_on_destroyed): tank.tank_destroyed.connect(_on_destroyed)
+    if not tank.repair_started.is_connected(_on_repair_started): tank.repair_started.connect(_on_repair_started)
+    if not tank.repair_finished.is_connected(_on_repair_finished): tank.repair_finished.connect(_on_repair_finished)
+    if not tank.status_changed.is_connected(_on_status_changed): tank.status_changed.connect(_on_status_changed)
+    if not tank.combat_event.is_connected(push_feed): tank.combat_event.connect(push_feed)
     _on_status_changed()
+    _refresh_meta()
 
 func _process(_delta: float) -> void:
     if not is_instance_valid(tank) or tank.tank_data == null:
         return
+    top_left.text = "BATTLE OR DIE   |   %s" % tank.tank_data.tank_name.to_upper()
+    objective_label.text = "OPERATION %02d/05   %s" % [GameState.campaign_wave, GameState.objective]
     if tank.reload_remaining > 0.0:
-        reload_label.text = "RELOAD %0.1fs" % tank.reload_remaining
+        reload_label.text = "CANNON  RELOADING  %0.1fs" % tank.reload_remaining
     elif tank.aim_remaining > 0.0:
-        reload_label.text = "AIM %0.1fs" % tank.aim_remaining
+        reload_label.text = "CANNON  AIMING  %0.1fs" % tank.aim_remaining
     else:
-        reload_label.text = "READY"
-    var engine_text: String = "OK"
-    if not tank.engine.operational:
-        engine_text = "DISABLED"
-    speed_label.text = "SPEED %d km/h   ENGINE %s" % [roundi(tank.velocity.length() * 3.6), engine_text]
-    ballistic_label.text = "GUN %0.0fmm   MV %0.0fm/s   PEN %0.0fmm" % [tank.tank_data.cannon_caliber_mm, tank.tank_data.muzzle_velocity_ms, tank.tank_data.penetration_100m_mm]
-    match_label.text = "BATTLE %02d:%02d   KILLS %02d   ENEMIES %02d" % [_minutes(), _seconds(), GameState.kills, _enemy_count()]
-
-func _minutes() -> int:
-    return int(GameState.match_elapsed / 60.0)
-
-func _seconds() -> int:
-    return int(GameState.match_elapsed) % 60
-
-func _enemy_count() -> int:
-    var count: int = 0
-    for enemy: TankBase in GameState.bot_tanks:
-        if is_instance_valid(enemy) and not enemy.destroyed:
-            count += 1
-    return count
+        reload_label.text = "CANNON  READY"
+    var ability: String = tank.tank_data.ability_name
+    var cd: float = tank.ability_cooldown_remaining
+    ability_label.text = "ABILITY  %s  [%s]" % [ability.to_upper(), "READY" if cd <= 0.0 else "%0.1fs" % cd]
+    stats_label.text = "HULL %d%%   SPEED %d km/h   GUN %dmm   PEN %dmm" % [roundi(tank.hull_health),roundi(tank.velocity.length()*3.6),roundi(tank.tank_data.cannon_caliber_mm),roundi(tank.tank_data.penetration_100m_mm)]
+    reward_label.text = "LEVEL %02d   XP %04d   CR %04d   SCORE %06d   KILLS %02d" % [GameState.level,GameState.xp,GameState.credits,GameState.score,GameState.kills]
 
 func _on_status_changed() -> void:
-    if not is_instance_valid(tank) or tank.tank_data == null:
+    if is_instance_valid(tank) and tank.tank_data != null:
+        status_label.text = "HULL %03d%%   %s   ENGINE %s   TURRET %s" % [roundi(tank.hull_health),tank.last_hit_result,"OK" if tank.engine.operational else "OUT","OK" if tank.turret_ring.operational else "LOCKED"]
+
+func _refresh_meta() -> void:
+    if not is_instance_valid(tank):
         return
-    status_label.text = "%s   |   HULL %d%%" % [tank.tank_data.tank_name.to_upper(), roundi(tank.hull_health)]
+
+func _on_wave_started(wave: int, objective: String) -> void:
+    push_feed("[WAVE %d] %s" % [wave, objective])
+
+func push_feed(text: String) -> void:
+    if not is_instance_valid(feed_box):
+        return
+    feed_box.append_text(text + "\n")
+    var lines := feed_box.get_parsed_text().split("\n")
+    if lines.size() > 9:
+        feed_box.clear()
+        for i in range(maxi(0,lines.size()-9), lines.size()):
+            feed_box.append_text(lines[i] + "\n")
 
 func _on_destroyed() -> void:
     status_label.text = "VEHICLE DESTROYED"
-    reload_label.text = ""
-    speed_label.text = ""
-    ballistic_label.text = ""
+    push_feed("YOU ARE DESTROYED — ENTER restarts after the operation ends")
 
-func _on_repair_started(module_name: String, duration: float) -> void:
-    reload_label.text = "REPAIRING %s  %0.1fs" % [module_name.to_upper(), duration]
+func _on_match_ended(won: bool) -> void:
+    var title := "OPERATION COMPLETE" if won else "OPERATION FAILED"
+    push_feed(title)
+    _show_result(title, won)
 
-func _on_repair_finished(module_name: String) -> void:
-    reload_label.text = "%s RESTORED" % module_name.to_upper()
+func _show_result(title: String, won: bool) -> void:
+    if is_instance_valid(pause_panel): pause_panel.queue_free()
+    pause_panel = Panel.new()
+    pause_panel.position = Vector2(420,205)
+    pause_panel.size = Vector2(440,240)
+    root.add_child(pause_panel)
+    var l := Label.new()
+    l.position = Vector2(28,24)
+    l.text = title
+    l.add_theme_font_size_override("font_size",28)
+    pause_panel.add_child(l)
+    var d := Label.new()
+    d.position = Vector2(28,70)
+    d.text = "WAVES  %02d/05\nKILLS  %02d\nSCORE  %06d\nLEVEL  %02d" % [GameState.campaign_wave,GameState.kills,GameState.score,GameState.level]
+    d.add_theme_font_size_override("font_size",17)
+    pause_panel.add_child(d)
+    var b := Button.new()
+    b.position = Vector2(28,177)
+    b.size = Vector2(180,38)
+    b.text = "PLAY AGAIN"
+    b.pressed.connect(_restart_campaign)
+    pause_panel.add_child(b)
 
-func set_xray_panel(panel: XRayPanel) -> void:
-    xray_panel = panel
-
-func toggle_xray() -> void:
-    if is_instance_valid(xray_panel):
-        xray_panel.visible = not xray_panel.visible
+func _restart_campaign() -> void:
+    if is_instance_valid(pause_panel):
+        pause_panel.queue_free()
+        pause_panel = null
+    var p := GameState.start_campaign()
+    bind_tank(p)
 
 func _build_garage() -> void:
-    garage_panel = Panel.new()
-    garage_panel.position = Vector2(720.0, 70.0)
-    garage_panel.size = Vector2(520.0, 570.0)
-    garage_panel.visible = false
-    add_child(garage_panel)
-    garage_title = Label.new()
-    garage_title.position = Vector2(24.0, 18.0)
-    garage_title.text = "GARAGE / VEHICLE SELECT"
-    garage_title.add_theme_font_size_override("font_size", 22)
-    garage_panel.add_child(garage_title)
-    garage_data = Label.new()
-    garage_data.position = Vector2(250.0, 72.0)
-    garage_data.size = Vector2(245.0, 440.0)
-    garage_data.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    garage_data.add_theme_font_size_override("font_size", 14)
-    garage_panel.add_child(garage_data)
-    var names: Array[String] = GameState.get_tank_names()
-    for index: int in range(names.size()):
-        var button: Button = Button.new()
-        button.position = Vector2(20.0, 62.0 + float(index) * 39.0)
-        button.size = Vector2(205.0, 32.0)
-        button.text = names[index]
-        button.pressed.connect(_on_tank_button_pressed.bind(names[index]))
-        garage_panel.add_child(button)
-        tank_buttons.append(button)
+    garage = Panel.new()
+    garage.position = Vector2(700,80)
+    garage.size = Vector2(545,555)
+    garage.visible = false
+    root.add_child(garage)
+    var title := Label.new()
+    title.position = Vector2(20,16)
+    title.text = "GARAGE / COMMANDER"
+    title.add_theme_font_size_override("font_size",23)
+    garage.add_child(title)
+    garage_info = Label.new()
+    garage_info.position = Vector2(250,58)
+    garage_info.size = Vector2(275,455)
+    garage_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    garage_info.add_theme_font_size_override("font_size",14)
+    garage.add_child(garage_info)
+    for i in range(GameState.get_tank_names().size()):
+        var b := Button.new()
+        b.position = Vector2(18,58 + i*39)
+        b.size = Vector2(210,32)
+        b.text = GameState.get_tank_names()[i]
+        b.pressed.connect(_select_tank.bind(b.text))
+        garage.add_child(b)
+        tank_buttons.append(b)
     _refresh_garage()
-
-func _on_tank_button_pressed(tank_name: String) -> void:
-    if GameState.match_active:
-        GameState.end_match()
-    GameState.set_selected_tank(tank_name)
-    _refresh_garage()
-    GameState.start_match(Vector3.ZERO)
-    bind_tank(GameState.player_tank)
-    garage_panel.visible = false
 
 func _refresh_garage() -> void:
-    var data: TankData = GameState.get_selected_data()
-    if data == null:
-        garage_data.text = ""
-        return
-    garage_data.text = "%s\n\nMASS %.1f t\nENGINE %.0f hp\nSPEED %.0f / %.0f km/h\nARMOR %.0f / %.0f / %.0f mm\nGUN %.0f mm\nRELOAD %.1f s\nVELOCITY %.0f m/s\nPENETRATION %.0f mm\n\n%s" % [data.tank_name.to_upper(), data.mass_tons, data.engine_hp, data.top_speed_kmh, data.reverse_speed_kmh, data.armor_front_mm, data.armor_side_mm, data.armor_rear_mm, data.cannon_caliber_mm, data.reload_time_sec, data.muzzle_velocity_ms, data.penetration_100m_mm, data.description]
-    for button: Button in tank_buttons:
-        button.disabled = false
+    if not is_instance_valid(garage_info): return
+    var data := GameState.get_selected_data()
+    if data == null: return
+    garage_info.text = "%s\n\nROLE  %s\nDOCTRINE  %s\nPASSIVE  %s\nABILITY  %s\n\nARMOR  %d / %d / %d mm\nGUN  %d mm\nPENETRATION  %d mm\nRELOAD  %.1fs\nSPEED  %.0f km/h\n\n%s\n\nMASTERy  %d" % [data.tank_name.to_upper(),data.role,data.doctrine,data.passive_name,data.ability_name,roundi(data.armor_front_mm),roundi(data.armor_side_mm),roundi(data.armor_rear_mm),roundi(data.cannon_caliber_mm),roundi(data.penetration_100m_mm),data.reload_time_sec,data.top_speed_kmh,data.description,int(GameState.mastery.get(data.tank_name,0))]
+    for b: Button in tank_buttons:
+        b.disabled = not GameState.can_use_tank(b.text)
+
+func _select_tank(name_value: String) -> void:
+    if not GameState.can_use_tank(name_value): return
+    GameState.set_selected_tank(name_value)
+    _refresh_garage()
+    var p := GameState.start_campaign()
+    bind_tank(p)
+    garage.visible = false
 
 func toggle_garage() -> void:
-    if not is_instance_valid(garage_panel):
-        return
-    garage_panel.visible = not garage_panel.visible
-    if garage_panel.visible:
+    garage.visible = not garage.visible
+    if garage.visible:
         _refresh_garage()
+        close_overlays_except(garage)
 
-func _on_match_started(_player: TankBase, _enemies: Array[TankBase]) -> void:
-    _refresh_garage()
+func _build_xray() -> void:
+    xray_panel = XRayPanel.new()
+    xray_panel.position = Vector2(20,365)
+    xray_panel.size = Vector2(420,300)
+    xray_panel.visible = false
+    root.add_child(xray_panel)
 
-func _on_match_ended(player_won: bool) -> void:
-    if player_won:
-        status_label.text = "BATTLE WON"
-    else:
-        status_label.text = "BATTLE LOST"
+func toggle_xray() -> void:
+    xray_panel.visible = not xray_panel.visible
+    if xray_panel.visible:
+        xray_panel.bind_tank(tank)
+
+func toggle_pause() -> void:
+    get_tree().paused = not get_tree().paused
+    if get_tree().paused:
+        if not is_instance_valid(pause_panel):
+            pause_panel = Panel.new()
+            pause_panel.position = Vector2(460,245)
+            pause_panel.size = Vector2(360,160)
+            root.add_child(pause_panel)
+            var t := Label.new(); t.position = Vector2(30,25); t.text = "PAUSED"; t.add_theme_font_size_override("font_size",30); pause_panel.add_child(t)
+            var h := Label.new(); h.position = Vector2(30,78); h.text = "ESC to resume"; pause_panel.add_child(h)
+    elif is_instance_valid(pause_panel):
+        pause_panel.queue_free(); pause_panel = null
+
+func close_overlays() -> void:
+    garage.visible = false
+    xray_panel.visible = false
+
+func close_overlays_except(keep: Control) -> void:
+    if keep != garage: garage.visible = false
+    if keep != xray_panel: xray_panel.visible = false
