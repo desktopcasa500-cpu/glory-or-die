@@ -1,5 +1,6 @@
 [application]
 config/name="Battle or Die"
+config/description="Lightweight armored combat simulator for Godot 4 Compatibility renderer."
 run/main_scene="res://scenes/Main.tscn"
 config/features=PackedStringArray("4.3", "GL Compatibility")
 
@@ -13,7 +14,12 @@ window/stretch/mode="canvas_items"
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+renderer/rendering_method.debug="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.025, 0.033, 0.043, 1)
+textures/default_filters/use_nearest_mipmap_filter=false
+
+[performance]
+max_fps=60
 
 [autoload]
 GameState="*res://scripts/GameState.gd"
@@ -28,6 +34,7 @@ turret_right={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":6
 fire={"deadzone":0.5,"events":[Object(InputEventMouseButton,"button_index":1)]}
 repair={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":70)]}
 xray={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":88)]}
+garage={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":82)]}
 
 [physics]
 common/physics_ticks_per_second=60
