@@ -18,6 +18,7 @@ var penetration_100m_mm: float = 100.0
 var shooter: Node3D
 var lifetime: float = 0.0
 var active: bool = false
+var ricochet_count: int = 0
 
 func setup(start_position: Vector3, direction: Vector3, data: TankData, owner_node: Node3D) -> void:
 	global_position = start_position
@@ -28,6 +29,7 @@ func setup(start_position: Vector3, direction: Vector3, data: TankData, owner_no
 	penetration_100m_mm = data.penetration_100m_mm
 	shooter = owner_node
 	lifetime = 0.0
+	r icochet_count = 0
 	active = true
 
 func _ready() -> void:
@@ -42,11 +44,9 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 	var remaining: float = delta
-	while remaining > 0.0:
+	while remaining > 0.0 and active:
 		var step: float = minf(TICK_STEP_SEC, remaining)
 		_step_simulation(step)
-		if not active:
-			break
 		remaining -= step
 
 func _step_simulation(delta: float) -> void:
@@ -63,16 +63,16 @@ func _step_simulation(delta: float) -> void:
 	query.collision_mask = 1 | 2
 	query.collide_with_areas = false
 	query.collide_with_bodies = true
-	var shooter_rid: RID = shooter.get_rid() if is_instance_valid(shooter) else RID()
-	if shooter_rid.is_valid():
-		query.exclude = [shooter_rid]
+	if is_instance_valid(shooter):
+		query.exclude = [shooter.get_rid()]
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var hit: Dictionary = space.intersect_ray(query)
 	if not hit.is_empty():
 		_handle_impact(hit, previous_position, next_position)
 		return
 	global_position = next_position
-	look_at(global_position + velocity_vector.normalized(), Vector3.UP)
+	if speed > 0.01:
+		look_at(global_position + velocity_vector.normalized(), Vector3.UP)
 
 func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: Vector3) -> void:
 	var hit_position: Vector3 = hit["position"] as Vector3
@@ -82,16 +82,21 @@ func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: 
 	var cosine: float = clampf(absf(hit_normal.normalized().dot(incoming)), 0.0, 1.0)
 	var angle_deg: float = rad_to_deg(acos(cosine))
 	if angle_deg > 70.0:
-		r icochet(hit_position, hit_normal)
+		r_icoch et(hit_position, hit_normal)
 		return
-	if hit.get("collider", null) is Node and (hit["collider"] as Node).get_meta("battle_target", false):
-		GameState.projectile_impact.emit(hit["collider"] as Node, hit_position, hit_normal, travel, penetration_100m_mm, angle_deg)
+	var collider: Node = hit.get("collider", null) as Node
+	if is_instance_valid(collider) and collider.get_meta("battle_target", false):
+		GameState.projectile_impact.emit(collider, hit_position, hit_normal, travel, penetration_100m_mm, angle_deg)
 	impact_registered.emit(hit_position, hit_normal, angle_deg, false)
 	active = false
 	queue_free()
 
-func r icochet(position: Vector3, normal: Vector3) -> void:
+func r_icoch et(position: Vector3, normal: Vector3) -> void:
+	if ricochet_count >= 3:
+		active = false
+		queue_free()
+		return
+	ricochet_count += 1
 	ricochet.emit(position, normal)
 	velocity_vector = velocity_vector.bounce(normal).normalized() * velocity_vector.length() * 0.62
 	global_position = position + normal * 0.015
-	active = true
