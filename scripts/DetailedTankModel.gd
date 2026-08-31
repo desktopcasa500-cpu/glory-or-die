@@ -3,6 +3,7 @@ extends Node3D
 
 const DETAIL_COUNT: int = 240
 const CUBE_SIZE: Vector3 = Vector3(0.16, 0.12, 0.16)
+const DETAIL_AABB: AABB = AABB(Vector3(-5.0, -2.0, -7.0), Vector3(10.0, 6.0, 14.0))
 
 var built: bool = false
 
@@ -21,6 +22,7 @@ func _build(tank: TankBase) -> void:
     var detail_instance: MultiMeshInstance3D = MultiMeshInstance3D.new()
     detail_instance.name = "DetailCubes_240"
     detail_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    detail_instance.custom_aabb = DETAIL_AABB
 
     var multimesh: MultiMesh = MultiMesh.new()
     multimesh.transform_format = MultiMesh.TRANSFORM_3D
