@@ -11,6 +11,7 @@ const MAX_LIFETIME_SEC: float = 8.0
 const TICK_STEP_SEC: float = 1.0 / 120.0
 
 var velocity_vector: Vector3 = Vector3.ZERO
+var muzzle_speed_ms: float = 1.0
 var projectile_mass_kg: float = 8.0
 var projectile_diameter_m: float = 0.08
 var drag_coefficient: float = 0.30
@@ -22,7 +23,8 @@ var ricochet_count: int = 0
 
 func setup(start_position: Vector3, direction: Vector3, data: TankData, owner_node: Node3D) -> void:
 	global_position = start_position
-	velocity_vector = direction.normalized() * data.muzzle_velocity_ms
+	muzzle_speed_ms = maxf(1.0, data.muzzle_velocity_ms)
+	velocity_vector = direction.normalized() * muzzle_speed_ms
 	projectile_mass_kg = maxf(0.1, data.projectile_mass_kg)
 	projectile_diameter_m = maxf(0.01, data.projectile_diameter_m)
 	drag_coefficient = clampf(data.projectile_drag_coefficient, 0.05, 0.8)
@@ -85,11 +87,16 @@ func _handle_impact(hit: Dictionary, previous_position: Vector3, next_position: 
 		_ricochet(hit_position, hit_normal)
 		return
 	var collider: Node = hit.get("collider", null) as Node
+	var impact_penetration: float = _penetration_at_current_speed()
 	if is_instance_valid(collider) and collider.get_meta("battle_target", false):
-		GameState.projectile_impact.emit(collider, hit_position, hit_normal, travel, penetration_100m_mm, angle_deg)
+		GameState.projectile_impact.emit(collider, hit_position, hit_normal, travel, impact_penetration, angle_deg)
 	impact_registered.emit(hit_position, hit_normal, angle_deg, false)
 	active = false
 	queue_free()
+
+func _penetration_at_current_speed() -> float:
+	var speed_ratio: float = clampf(velocity_vector.length() / muzzle_speed_ms, 0.0, 1.0)
+	return penetration_100m_mm * pow(speed_ratio, 1.65)
 
 func _ricochet(position: Vector3, normal: Vector3) -> void:
 	if ricochet_count >= 3:
