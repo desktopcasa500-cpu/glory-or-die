@@ -17,6 +17,8 @@ signal status_changed()
 @onready var turret_mesh: MeshInstance3D = $Turret/TurretMesh
 @onready var muzzle: Marker3D = $Turret/Muzzle
 @onready var repair_timer: Timer = $RepairTimer
+@onready var hull_mesh: MeshInstance3D = $HullMesh
+@onready var gun_barrel: MeshInstance3D = $Turret/Barrel
 
 var tank_data: TankData
 var is_player: bool = false
@@ -54,6 +56,68 @@ func configure(data: TankData, player_controlled: bool) -> void:
 	reload_remaining = 0.0
 	aim_remaining = 0.0
 	bot_cooldown = 1.0
+	_apply_visual_profile()
+
+func _apply_visual_profile() -> void:
+	var hull_scale: Vector3 = Vector3.ONE
+	var turret_scale: Vector3 = Vector3.ONE
+	var barrel_scale: Vector3 = Vector3.ONE
+	var turret_visible: bool = true
+	match tank_data.tank_name:
+		"Churchill":
+			hull_scale = Vector3(1.08, 1.15, 1.10)
+			turret_scale = Vector3(0.98, 1.0, 0.98)
+			barrel_scale = Vector3(0.92, 1.0, 0.92)
+		"Hetzer":
+			hull_scale = Vector3(0.88, 0.72, 0.96)
+			turret_scale = Vector3(0.82, 0.72, 0.82)
+			barrel_scale = Vector3(0.82, 0.82, 1.05)
+			turret_visible = false
+		"IS-2":
+			hull_scale = Vector3(1.10, 1.04, 1.08)
+			turret_scale = Vector3(1.04, 1.08, 1.04)
+			barrel_scale = Vector3(1.30, 1.30, 1.30)
+		"KV-1":
+			hull_scale = Vector3(1.10, 1.08, 1.08)
+			turret_scale = Vector3(1.08, 1.05, 1.08)
+			barrel_scale = Vector3(1.05, 1.05, 1.08)
+		"Panther":
+			hull_scale = Vector3(1.02, 0.96, 1.06)
+			turret_scale = Vector3(0.98, 0.92, 1.02)
+			barrel_scale = Vector3(0.92, 0.92, 1.18)
+		"Panzer IV":
+			hull_scale = Vector3(0.96, 0.94, 1.00)
+			turret_scale = Vector3(0.96, 0.96, 0.96)
+			barrel_scale = Vector3(0.90, 0.90, 0.98)
+		"Pershing":
+			hull_scale = Vector3(1.04, 1.02, 1.04)
+			turret_scale = Vector3(1.02, 1.02, 1.02)
+			barrel_scale = Vector3(1.05, 1.05, 1.08)
+		"Sherman":
+			hull_scale = Vector3(1.00, 0.96, 1.00)
+			turret_scale = Vector3(0.98, 1.00, 0.98)
+			barrel_scale = Vector3(0.92, 0.92, 1.02)
+		"StuG III":
+			hull_scale = Vector3(0.92, 0.76, 1.00)
+			turret_scale = Vector3(0.84, 0.68, 0.90)
+			barrel_scale = Vector3(0.88, 0.88, 1.04)
+			turret_visible = false
+		"T-34":
+			hull_scale = Vector3(0.98, 0.90, 1.04)
+			turret_scale = Vector3(0.94, 0.90, 0.94)
+			barrel_scale = Vector3(0.90, 0.90, 0.98)
+		"Tiger":
+			hull_scale = Vector3(1.10, 1.04, 1.08)
+			turret_scale = Vector3(1.02, 1.02, 1.02)
+			barrel_scale = Vector3(1.02, 1.02, 1.14)
+		"Tiger II":
+			hull_scale = Vector3(1.16, 1.12, 1.12)
+			turret_scale = Vector3(1.08, 1.08, 1.08)
+			barrel_scale = Vector3(1.06, 1.06, 1.20)
+	hull_mesh.scale = hull_scale
+	turret.scale = turret_scale
+	gun_barrel.scale = barrel_scale
+	turret.visible = turret_visible
 
 func _exit_tree() -> void:
 	if GameState.projectile_impact.is_connected(_on_projectile_impact):
@@ -119,7 +183,7 @@ func engine_factor() -> float:
 	return 0.55 if engine.fire_risk else 1.0
 
 func _update_turret(delta: float) -> void:
-	if turret_ring.rotation_multiplier <= 0.0:
+	if turret_ring.rotation_multiplier <= 0.0 or not turret.visible:
 		return
 	var rate: float = deg_to_rad(tank_data.turret_traverse_deg_sec) * turret_ring.rotation_multiplier
 	turret.rotate_y(turret_input * rate * delta)
@@ -172,8 +236,7 @@ func resolve_armor_hit(hit_position: Vector3, hit_normal: Vector3, travel_direct
 
 func apply_spall(hit_position: Vector3, direction: Vector3, projectile_penetration: float) -> void:
 	var local_hit: Vector3 = to_local(hit_position)
-	var local_direction: Vector3 = direction.normalized()
-	local_direction = Vector3(local_direction.x, local_direction.y, local_direction.z).normalized()
+	var local_direction: Vector3 = (global_transform.basis.inverse() * direction.normalized()).normalized()
 	var module_points: Array[Vector3] = [Vector3(0.0, 0.55, 0.7), Vector3(0.0, 0.8, -0.55), Vector3(0.0, 1.0, 0.0), Vector3(0.65, 1.05, 0.0)]
 	var module_weights: Array[float] = [1.0, 1.0, 0.8, 0.55]
 	for index: int in range(module_points.size()):
@@ -352,5 +415,6 @@ func destroy_vehicle() -> void:
 	destroyed = true
 	set_physics_process(false)
 	set_collision_layer_value(2, false)
+	set_collision_mask_value(1, false)
 	tank_destroyed.emit()
 	status_changed.emit()
