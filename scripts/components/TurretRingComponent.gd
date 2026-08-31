@@ -21,7 +21,8 @@ func reset_state() -> void:
 func apply_damage(amount: float, lockout: bool) -> void:
     if not operational:
         return
-    health = maxf(0.0, health - amount)
+    var safe_amount: float = maxf(0.0, amount)
+    health = maxf(0.0, health - safe_amount)
     if lockout or health <= 0.0:
         operational = false
         rotation_multiplier = 0.0
@@ -34,5 +35,5 @@ func apply_damage(amount: float, lockout: bool) -> void:
 func repair_basic() -> void:
     health = maxf(35.0, max_health * 0.4)
     operational = true
-    rotation_multiplier = 0.25
+    rotation_multiplier = 1.0
     repaired.emit(self)
